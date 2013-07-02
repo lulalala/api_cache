@@ -34,15 +34,17 @@ class APICache
     def get
       check_queryable!
       APICache.logger.debug "APICache #{@key}: Calling API"
-      set_queried_at
+      result = nil
       Timeout::timeout(@timeout) do
         if @block
           # If this call raises an error then the response is not cached
-          @block.call
+          result = @block.call
         else
-          get_key_via_http
+          result = get_key_via_http
         end
       end
+      set_queried_at
+      result
     rescue Timeout::Error => e
       raise APICache::TimeoutError, "APICache #{@key}: Request timed out (timeout #{@timeout}s)"
     end
